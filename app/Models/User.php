@@ -59,10 +59,16 @@ class User extends Authenticatable
         ];
     }
 
-        // Sisi lawan dari belongsTo: satu user punya satu profil Pencari Kerja.
-        // "hasOne" dipakai di sisi yang TIDAK memegang foreign key.
+    // Sisi lawan dari belongsTo: satu user punya satu profil Pencari Kerja.
+    // "hasOne" dipakai di sisi yang TIDAK memegang foreign key.
     public function seekerProfile(): HasOne
         {
             return $this->hasOne(SeekerProfile::class);
         }
+
+    // Satu user punya satu profil Pemberi Kerja (kalau perannya employer).
+    public function employerProfile(): HasOne
+    {
+        return $this->hasOne(EmployerProfile::class);
+    }
 }
