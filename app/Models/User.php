@@ -8,6 +8,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 // Authenticatable = kelas dasar untuk model yang bisa login (punya fitur
 // autentikasi: id, remember token, dll).
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -57,4 +58,11 @@ class User extends Authenticatable
             'role' => Role::class,
         ];
     }
+
+        // Sisi lawan dari belongsTo: satu user punya satu profil Pencari Kerja.
+        // "hasOne" dipakai di sisi yang TIDAK memegang foreign key.
+    public function seekerProfile(): HasOne
+        {
+            return $this->hasOne(SeekerProfile::class);
+        }
 }
