@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 // autentikasi: id, remember token, dll).
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 // FILLABLE = daftar kolom yang BOLEH diisi sekaligus lewat User::create([...])
 // atau $user->fill([...]). Kolom di luar daftar ini diabaikan (perlindungan
@@ -70,5 +71,17 @@ class User extends Authenticatable
     public function employerProfile(): HasOne
     {
         return $this->hasOne(EmployerProfile::class);
+    }
+
+        // Riwayat persetujuan syarat dan privasi.
+    public function consents(): HasMany
+    {
+        return $this->hasMany(UserConsent::class);
+    }
+
+    // Riwayat sanksi dari Admin.
+    public function sanctions(): HasMany
+    {
+        return $this->hasMany(UserSanction::class);
     }
 }
