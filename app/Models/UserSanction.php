@@ -29,4 +29,20 @@ class UserSanction extends Model
     {
         return $this->belongsTo(Admin::class);
     }
+
+    // Pesan untuk pengguna yang dibatasi. Alasan internal dari Admin tidak ditampilkan.
+    public function blockedMessage(): string
+    {
+        if ($this->type === SanctionType::Ban) {
+            return 'Akun Anda diblokir. Hubungi Admin untuk informasi lebih lanjut.';
+        }
+
+        if ($this->expires_at === null) {
+            return 'Akun Anda sedang ditangguhkan.';
+        }
+
+        $until = $this->expires_at->timezone('Asia/Jakarta')->translatedFormat('d F Y, H.i');
+
+        return "Akun Anda ditangguhkan sampai {$until} WIB.";
+    }
 }

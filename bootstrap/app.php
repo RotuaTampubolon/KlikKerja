@@ -4,6 +4,10 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use App\Http\Middleware\EnsureIdentityVerified;
+use App\Http\Middleware\EnsureNotBlocked;
+use App\Http\Middleware\EnsureRole;
+use App\Http\Middleware\EnsureRoleChosen;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -13,8 +17,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Alias = nama pendek yang dipakai di route. Nama-nama ini ditetapkan PRD.
+        $middleware->alias([
+            'role.chosen' => EnsureRoleChosen::class,
+            'role' => EnsureRole::class,
+            'identity.verified' => EnsureIdentityVerified::class,
+            'not.blocked' => EnsureNotBlocked::class,
+        ]);
     })
+    
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
