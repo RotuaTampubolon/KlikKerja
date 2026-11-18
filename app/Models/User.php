@@ -4,6 +4,7 @@ namespace App\Models;
 
 // Enum peran yang baru dibuat; diimpor agar bisa dipakai di casts() di bawah.
 use App\Enums\Role;
+use App\Enums\SanctionType;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -83,5 +84,37 @@ class User extends Authenticatable
     public function sanctions(): HasMany
     {
         return $this->hasMany(UserSanction::class);
+    }
+    
+    // Mengembalikan sanksi yang SEDANG membatasi akun, atau null kalau akun bebas.
+    // Dipakai saat login (sekarang) dan oleh middleware not.blocked (Tahap 3).
+    public function currentRestriction(): ?UserSanction
+    {
+        // Ambil sanksi terbaru yang bukan peringatan. Pemulihan ikut dihitung
+        // karena ia membatalkan suspend/blokir sebelumnya.
+        // latest('id'): urut dari id terbesar; lebih andal daripada created_at
+        // kalau dua sanksi dibuat dalam detik yang sama.
+        $latest = $this->sanctions()
+            ->whereIn('type', [
+                SanctionType::Suspension->value,
+                SanctionType::Ban->value,
+                SanctionType::Restoration->value,
+            ])
+            ->latest('id')
+            ->first();
+
+        if ($latest === null) {
+            return null;
+        }
+
+        return match ($latest->type) {
+            SanctionType::Ban => $latest,
+            // Suspend tanpa batas waktu, atau batasnya belum lewat: masih berlaku.
+            SanctionType::Suspension => ($latest->expires_at === null || $latest->expires_at->isFuture())
+                ? $latest
+                : null,
+            // Restoration (dan sisanya): akun bebas.
+            default => null,
+        };
     }
 }

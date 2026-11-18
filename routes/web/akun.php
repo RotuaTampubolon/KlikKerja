@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\GoogleAuthController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RoleSelectionController;
+use App\Http\Controllers\Auth\LogoutController;
 
 // Halaman masuk. Nama 'login' WAJIB: middleware auth bawaan Laravel
 // mengarahkan tamu ke route bernama 'login'.
@@ -19,4 +20,5 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])
 Route::middleware('auth')->group(function () {
     Route::get('/daftar/peran', [RoleSelectionController::class, 'show'])->name('role.show');
     Route::post('/daftar/peran', [RoleSelectionController::class, 'store'])->name('role.store');
+    Route::post('/keluar', LogoutController::class)->name('logout');
 });

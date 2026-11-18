@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
 use Throwable;
+use App\Enums\SanctionType;
+use App\Models\UserSanction;
 
 class GoogleAuthController extends Controller
 {
@@ -46,8 +48,15 @@ class GoogleAuthController extends Controller
             ],
         );
 
-        Auth::login($user);
+        // PRD: akun yang diblokir atau masih disuspend tidak boleh masuk.
+        // Cek SEBELUM Auth::login, supaya tidak pernah tercipta sesi login.
+        $restriction = $user->currentRestriction();
+        if ($restriction !== null) {
+            return redirect()->route('login')
+                ->withErrors(['google' => $this->restrictionMessage($restriction)]);
+        }
 
+        Auth::login($user);
         // Ganti ID sesi setelah login (mencegah session fixation).
         $request->session()->regenerate();
 
@@ -57,5 +66,21 @@ class GoogleAuthController extends Controller
         }
 
         return redirect()->intended('/');
+    }
+
+    // Pesan untuk pengguna yang dibatasi. Alasan internal dari Admin tidak ditampilkan.
+    private function restrictionMessage(UserSanction $restriction): string
+    {
+        if ($restriction->type === SanctionType::Ban) {
+            return 'Akun Anda diblokir. Hubungi Admin untuk informasi lebih lanjut.';
+        }
+
+        if ($restriction->expires_at === null) {
+            return 'Akun Anda sedang ditangguhkan.';
+        }
+
+        $until = $restriction->expires_at->timezone('Asia/Jakarta')->translatedFormat('d F Y, H.i');
+
+        return "Akun Anda ditangguhkan sampai {$until} WIB.";
     }
 }

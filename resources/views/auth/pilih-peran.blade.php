@@ -119,6 +119,12 @@
                 </form>
             </section>
         </div>
+
+         {{-- Logout memakai POST + token CSRF, bukan link biasa --}}
+        <form method="POST" action="{{ route('logout') }}" class="mt-4 text-center">
+            @csrf
+            <button type="submit" class="text-sm text-gray-500 underline hover:text-gray-700">Keluar</button>
+        </form>
     </main>
 </body>
 </html>
