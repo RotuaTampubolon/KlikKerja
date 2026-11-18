@@ -24,8 +24,22 @@ return Application::configure(basePath: dirname(__DIR__))
             'identity.verified' => EnsureIdentityVerified::class,
             'not.blocked' => EnsureNotBlocked::class,
         ]);
+
+                // Ke mana TAMU dikirim saat membuka halaman yang butuh login:
+        // area Admin -> login Admin, selain itu -> login pengguna.
+        $middleware->redirectGuestsTo(
+            fn (Request $request) => $request->is('admin', 'admin/*')
+                ? route('admin.login')
+                : route('login')
+        );
+
+        // Ke mana pengguna yang SUDAH login dikirim saat membuka halaman khusus tamu
+        // (middleware guest), misalnya halaman login.
+        $middleware->redirectUsersTo(
+            fn (Request $request) => $request->is('admin', 'admin/*') ? '/admin' : '/'
+        );
     })
-    
+
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
