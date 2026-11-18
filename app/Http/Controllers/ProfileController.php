@@ -17,9 +17,13 @@ class ProfileController extends Controller
         // (user_id terisi otomatis dari relasi). Tidak ada ID dari URL yang dipercaya.
         $profile = $user->seekerProfile()->firstOrCreate();
 
+        // Terbaru di atas. Pengalaman tanpa tanggal mulai (NULL) otomatis terakhir.
+        $experiences = $profile->workExperiences()->orderByDesc('started_at')->get();
+
         return view('profil.pencari', [
             'user' => $user,
             'profile' => $profile,
+            'experiences' => $experiences,
         ]);
     }
 

@@ -30,4 +30,16 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'not.blocked', 'role.chosen', 'role:seeker'])->group(function () {
     Route::get('/profil', [ProfileController::class, 'show'])->name('profile.show');
     Route::put('/profil', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profil/pengalaman', [WorkExperienceController::class, 'store'])
+        ->name('experience.store');
+
+    // can:update,experience = jalankan WorkExperiencePolicy::update pada model
+    // yang ditemukan dari {experience}. Gagal = 403, sebelum validasi dan controller.
+    Route::put('/profil/pengalaman/{experience}', [WorkExperienceController::class, 'update'])
+        ->name('experience.update')
+        ->middleware('can:update,experience');
+
+    Route::delete('/profil/pengalaman/{experience}', [WorkExperienceController::class, 'destroy'])
+        ->name('experience.destroy')
+        ->middleware('can:delete,experience');
 });
