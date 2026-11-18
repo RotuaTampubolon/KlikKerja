@@ -33,6 +33,17 @@ return [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
+        
+    ],
+    // Konfigurasi login Google untuk Laravel Socialite.
+    // Nilainya dibaca dari .env lewat env(), bukan ditulis di sini,
+    // karena file config ikut di-commit ke Git sedangkan secret tidak boleh.
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        // Alamat tujuan Google setelah pengguna selesai login.
+        // Harus sama persis dengan yang didaftarkan di Google Cloud Console.
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
 ];
