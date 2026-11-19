@@ -4,10 +4,6 @@ use App\Http\Controllers\Auth\GoogleAuthController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RoleSelectionController;
 use App\Http\Controllers\Auth\LogoutController;
-use App\Http\Controllers\Admin\AdminAuthController;
-use App\Http\Controllers\Admin\AdminTwoFactorController;
-use App\Http\Controllers\Admin\AdminUserController;
-use App\Http\Controllers\Admin\AdminUserSanctionController;
 
 // Halaman masuk. Nama 'login' WAJIB: middleware auth bawaan Laravel
 // mengarahkan tamu ke route bernama 'login'.
@@ -25,7 +21,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/daftar/peran', [RoleSelectionController::class, 'show'])->name('role.show');
     Route::post('/daftar/peran', [RoleSelectionController::class, 'store'])->name('role.store');
     Route::post('/keluar', LogoutController::class)->name('logout');
-
 });
 
 // Area Admin: URL berawalan /admin, nama route berawalan admin.

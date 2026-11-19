@@ -10,4 +10,15 @@ enum VerificationStatus: string
     case Pending = 'pending';       // sudah mengajukan, menunggu Admin
     case Verified = 'verified';     // disetujui Admin
     case Rejected = 'rejected';     // ditolak Admin (bisa mengajukan ulang)
+
+    // Teks yang ditampilkan ke pengguna. Satu sumber untuk seluruh aplikasi.
+    public function label(): string
+    {
+        return match ($this) {
+            self::Unverified => 'Belum terverifikasi',
+            self::Pending => 'Menunggu verifikasi',
+            self::Verified => 'Terverifikasi',
+            self::Rejected => 'Ditolak',
+        };
+    }
 }
