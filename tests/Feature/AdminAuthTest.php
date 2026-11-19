@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Admin;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PragmaRX\Google2FA\Google2FA;
 use Tests\TestCase;
 
 class AdminAuthTest extends TestCase
@@ -17,13 +18,19 @@ class AdminAuthTest extends TestCase
         $this->withoutVite();
     }
 
-    private function admin(): Admin
+    private function admin(bool $dengan2fa = true): Admin
     {
-        return Admin::create([
+        $admin = Admin::create([
             'name' => 'Admin Uji',
             'email' => 'admin@example.test',
             'password' => 'rahasia123',
         ]);
+
+        if ($dengan2fa) {
+            $admin->forceFill(['two_factor_secret' => (new Google2FA)->generateSecretKey()])->save();
+        }
+
+        return $admin;
     }
 
     public function test_tamu_diarahkan_ke_login_admin(): void
@@ -31,17 +38,27 @@ class AdminAuthTest extends TestCase
         $this->get('/admin')->assertRedirectToRoute('admin.login');
     }
 
-    public function test_login_admin_berhasil(): void
+    public function test_password_benar_diarahkan_ke_kode_2fa_tanpa_login(): void
     {
-        $this->admin();
+        $admin = $this->admin();
 
         $this->post('/admin/masuk', ['email' => 'admin@example.test', 'password' => 'rahasia123'])
-            ->assertRedirect('/admin');
+            ->assertRedirectToRoute('admin.2fa')
+            ->assertSessionHas('admin_2fa.id', $admin->id);
 
-        $this->assertAuthenticated('admin');
-        $this->assertGuest('web'); // login Admin tidak menjadikanmu pengguna biasa
+        $this->assertGuest('admin'); // belum login: masih menunggu kode
     }
 
+    public function test_admin_tanpa_2fa_ditolak(): void
+    {
+        $this->admin(dengan2fa: false);
+
+        $this->post('/admin/masuk', ['email' => 'admin@example.test', 'password' => 'rahasia123'])
+            ->assertSessionHasErrors('email')
+            ->assertSessionMissing('admin_2fa');
+
+        $this->assertGuest('admin');
+    }
     public function test_password_salah_ditolak(): void
     {
         $this->admin();
@@ -64,7 +81,6 @@ class AdminAuthTest extends TestCase
     {
         $user = User::factory()->seeker()->create();
 
-        // Login di guard 'web' tidak berlaku di guard 'admin'.
         $this->actingAs($user)->get('/admin')->assertRedirectToRoute('admin.login');
     }
 

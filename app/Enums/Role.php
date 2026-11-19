@@ -14,4 +14,12 @@ enum Role: string
 
     // Admin sengaja TIDAK ada di sini: Admin punya tabel `admins` sendiri,
     // bukan peran di tabel `users`.
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::Seeker => 'Pencari Kerja',
+            self::Employer => 'Pemberi Kerja',
+        };
+    }
 }

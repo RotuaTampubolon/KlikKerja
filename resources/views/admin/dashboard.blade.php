@@ -11,6 +11,7 @@
         <h1 class="text-xl font-bold">Dashboard Admin</h1>
         {{-- Auth::guard('admin')->user() = Admin yang sedang login --}}
         <p class="mt-1 text-sm text-gray-600">Masuk sebagai {{ auth('admin')->user()->name }}</p>
+            <a href="{{ route('admin.users.index') }}" class="mt-4 inline-block text-blue-600 underline">Kelola pengguna</a>
 
         <form method="POST" action="{{ route('admin.logout') }}" class="mt-6">
             @csrf
