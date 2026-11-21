@@ -38,10 +38,22 @@ return [
             'report' => false,
         ],
 
+        // Disk PRIVAT khusus dokumen identitas (foto KTP dan selfie).
+        // Tidak punya 'url' dan 'serve' = false, jadi file TIDAK bisa dibuka lewat alamat web.
+        // Hanya bisa dibaca lewat kode PHP (controller yang memeriksa hak akses Admin).
+        'private' => [
+            'driver' => 'local',                              // disimpan di harddisk server sendiri
+            'root' => storage_path('app/private/identity'),   // folder "identity", di luar folder public/
+            'visibility' => 'private',                        // izin file tertutup untuk umum
+            'serve' => false,                                 // JANGAN buat route penyaji file
+            'throw' => true,                                  // gagal simpan = error, bukan diam-diam false
+            'report' => false,                                // tidak melaporkan error ganda ke log
+        ],
+        
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            'url' => rtrim(env('APP_URL', 'http://localhost'), '/') . '/storage',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
