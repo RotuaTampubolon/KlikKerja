@@ -17,11 +17,10 @@ class OtpService
     public const MASA_BERLAKU_MENIT = 5;         // kode berlaku 5 menit
     public const JEDA_KIRIM_ULANG_DETIK = 60;    // jeda minimal antar permintaan
     public const MAKS_PERMINTAAN_PER_HARI = 5;   // maksimal 5 permintaan per 24 jam
+    public const MAKS_PERCOBAAN = 5;             // maksimal 5 kali salah mengetik kode  
 
     // Laravel mengisi $pengirim otomatis dari container (LogOtpSender, atau pengirim palsu saat test).
-    public function __construct(private OtpSender $pengirim)
-    {
-    }
+    public function __construct(private OtpSender $pengirim) {}
 
     // Membuat dan mengirim satu kode OTP. Melempar OtpDitolakException jika melanggar aturan.
     public function kirim(User $user, string $nomorMentah): OtpRequest
@@ -61,6 +60,80 @@ class OtpService
 
             return $otp;
         });
+    }
+
+    // Memeriksa kode yang diketik pengguna. Berhasil: mengembalikan OTP yang sudah ditandai terverifikasi.
+    // Gagal: melempar OtpDitolakException dengan alasan yang jelas.
+    public function cek(User $user, string $nomorMentah, string $kodeMasukan): OtpRequest
+    {
+        $nomor = PhoneNumber::normalize($nomorMentah);
+
+        if ($nomor === null) {
+            throw OtpDitolakException::nomorTidakValid();
+        }
+
+        // PENTING: di dalam transaksi kita hanya MENGEMBALIKAN kegagalan, belum melemparnya.
+        // Kalau dilempar di dalam, transaksi dibatalkan dan penambahan "percobaan salah" ikut
+        // hilang, sehingga kode bisa ditebak tanpa batas. Lemparan dilakukan SETELAH transaksi selesai.
+        $hasil = DB::transaction(function () use ($user, $nomor, $kodeMasukan) {
+            // Hanya OTP TERBARU milik user ini untuk nomor ini. Kode lama otomatis tidak berlaku,
+            // dan user lain tidak bisa memakai kode milik orang lain. Baris dikunci agar tebakan
+            // yang dikirim bersamaan tetap dihitung satu per satu.
+            $otp = OtpRequest::query()
+                ->where('user_id', $user->id)
+                ->where('phone_number', $nomor)
+                ->orderByDesc('id')
+                ->lockForUpdate()
+                ->first();
+
+            if ($otp === null) {
+                return OtpDitolakException::tidakAdaPermintaan();
+            }
+
+            if ($otp->verified_at !== null) {
+                return $otp; // sudah pernah berhasil: tidak perlu diproses ulang
+            }
+
+            if ($otp->expires_at->isPast()) {
+                return OtpDitolakException::kedaluwarsa();
+            }
+
+            // Percobaan habis ditolak walaupun kode yang diketik kebetulan benar.
+            if ($otp->attempts >= self::MAKS_PERCOBAAN) {
+                return OtpDitolakException::percobaanHabis();
+            }
+
+            // Bandingkan dengan hash. Spasi di pinggir (mis. hasil salin-tempel) dibuang dulu.
+            if (! Hash::check(trim($kodeMasukan), $otp->code_hash)) {
+                $otp->increment('attempts'); // catat satu percobaan salah (atomik di database)
+
+                return OtpDitolakException::kodeSalah(self::MAKS_PERCOBAAN - $otp->attempts);
+            }
+
+            // Kode benar. verified_at tidak fillable, jadi diisi dengan forceFill oleh kode server.
+            $otp->forceFill(['verified_at' => now()])->save();
+
+            return $otp;
+        });
+
+        if ($hasil instanceof OtpDitolakException) {
+            throw $hasil;
+        }
+
+        return $hasil;
+    }
+
+    // Apakah user ini sudah berhasil memverifikasi nomor tersebut? (Dipakai Tahap 3 sebelum upload KTP.)
+    public function sudahTerverifikasi(User $user, string $nomorMentah): bool
+    {
+        $nomor = PhoneNumber::normalize($nomorMentah);
+
+        return $nomor !== null
+            && OtpRequest::query()
+            ->where('user_id', $user->id)
+            ->where('phone_number', $nomor)
+            ->whereNotNull('verified_at')
+            ->exists();
     }
 
     // Semua permintaan OTP yang "terkait": dibuat oleh user ini ATAU ditujukan ke nomor ini.
@@ -108,6 +181,6 @@ class OtpService
     // %06d mengisi nol di depan, jadi 42 menjadi "000042".
     private function buatKode(): string
     {
-        return sprintf('%0'.self::PANJANG_KODE.'d', random_int(0, 10 ** self::PANJANG_KODE - 1));
+        return sprintf('%0' . self::PANJANG_KODE . 'd', random_int(0, 10 ** self::PANJANG_KODE - 1));
     }
 }
