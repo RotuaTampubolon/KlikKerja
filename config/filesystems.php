@@ -37,7 +37,6 @@ return [
             'throw' => false,
             'report' => false,
         ],
-
         // Disk PRIVAT khusus dokumen identitas (foto KTP dan selfie).
         // Tidak punya 'url' dan 'serve' = false, jadi file TIDAK bisa dibuka lewat alamat web.
         // Hanya bisa dibaca lewat kode PHP (controller yang memeriksa hak akses Admin).
@@ -49,7 +48,6 @@ return [
             'throw' => true,                                  // gagal simpan = error, bukan diam-diam false
             'report' => false,                                // tidak melaporkan error ganda ke log
         ],
-        
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
