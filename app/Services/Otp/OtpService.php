@@ -136,6 +136,17 @@ class OtpService
             ->exists();
     }
 
+    // Nomor terakhir yang sudah lolos OTP milik user ini, atau null jika belum ada.
+    // Dipakai halaman /verifikasi untuk tahu langkah mana yang harus ditampilkan.
+    public function nomorTerverifikasi(User $user): ?string
+    {
+        return OtpRequest::query()
+            ->where('user_id', $user->id)
+            ->whereNotNull('verified_at')
+            ->orderByDesc('id')
+            ->value('phone_number');
+    }
+
     // Semua permintaan OTP yang "terkait": dibuat oleh user ini ATAU ditujukan ke nomor ini.
     // Dua sudut pandang sekaligus: membatasi satu akun yang menyalahgunakan layanan, dan melindungi
     // satu nomor dari banjir OTP yang dikirim banyak akun berbeda.
