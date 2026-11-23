@@ -8,6 +8,7 @@ use App\Services\Otp\OtpService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use App\Models\Verification;
 
 // Halaman verifikasi identitas. Tahap 3 akan menambahkan unggah dokumen di controller ini.
 class VerificationController extends Controller
@@ -33,6 +34,14 @@ class VerificationController extends Controller
             'nomorAktif' => $request->session()->get('verifikasi.nomor'),
             // Nomor yang SUDAH lolos OTP, atau null.
             'nomorTerverifikasi' => $otp->nomorTerverifikasi($user),
+            // Alasan penolakan terakhir, hanya jika akun sedang berstatus Ditolak (supaya pengguna tahu apa yang harus diperbaiki).
+            'alasanPenolakan' => $user->verification_status === VerificationStatus::Rejected
+                ? Verification::query()
+                ->where('user_id', $user->id)
+                ->where('status', VerificationStatus::Rejected->value)
+                ->orderByDesc('id')
+                ->value('rejected_reason')
+                : null,
         ]);
     }
 }

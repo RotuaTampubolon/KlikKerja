@@ -3,6 +3,7 @@
 use App\Http\Controllers\Verification\OtpController;
 use App\Http\Controllers\Verification\VerificationController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Verification\DocumentUploadController;
 
 // Pengguna biasa (guard web) yang sudah login, sudah memilih peran, dan akunnya tidak diblokir.
 // Sengaja TANPA 'identity.verified': halaman ini justru tempat pengguna menjadi terverifikasi.
@@ -22,4 +23,9 @@ Route::middleware(['auth', 'role.chosen', 'not.blocked'])
         Route::post('/otp/cek', [OtpController::class, 'cek'])
             ->middleware('throttle:10,1')
             ->name('otp.cek');
+
+        // POST /verifikasi/dokumen : unggah KTP dan selfie. Dibatasi 5 kali per menit.
+        Route::post('/dokumen', [DocumentUploadController::class, 'store'])
+            ->middleware('throttle:5,1')
+            ->name('dokumen.store');
     });
