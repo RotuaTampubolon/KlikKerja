@@ -193,4 +193,19 @@ class OtpServiceCekTest extends TestCase
         $this->assertFalse($this->layanan()->sudahTerverifikasi($user, '081999999999'));     // nomor lain
         $this->assertFalse($this->layanan()->sudahTerverifikasi($this->buatUser(), self::NOMOR)); // user lain
     }
+
+    
+    public function test_nomor_terverifikasi_mengembalikan_nomor_milik_user_atau_null(): void
+    {
+        $user = $this->buatUser();
+        $this->assertNull($this->layanan()->nomorTerverifikasi($user));                 // belum apa-apa
+
+        $kode = $this->mintaKode($user);
+        $this->assertNull($this->layanan()->nomorTerverifikasi($user));                 // OTP terkirim, belum dicek
+
+        $this->layanan()->cek($user, self::NOMOR, $kode);
+
+        $this->assertSame('6281234567890', $this->layanan()->nomorTerverifikasi($user)); // nomor baku
+        $this->assertNull($this->layanan()->nomorTerverifikasi($this->buatUser()));      // user lain tidak terpengaruh
+    }
 }
