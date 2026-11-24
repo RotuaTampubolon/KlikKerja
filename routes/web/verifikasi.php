@@ -4,6 +4,8 @@ use App\Http\Controllers\Verification\OtpController;
 use App\Http\Controllers\Verification\VerificationController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Verification\DocumentUploadController;
+use App\Http\Controllers\Verification\DocumentViewController;
+
 
 // Pengguna biasa (guard web) yang sudah login, sudah memilih peran, dan akunnya tidak diblokir.
 // Sengaja TANPA 'identity.verified': halaman ini justru tempat pengguna menjadi terverifikasi.
@@ -29,3 +31,22 @@ Route::middleware(['auth', 'role.chosen', 'not.blocked'])
             ->middleware('throttle:5,1')
             ->name('dokumen.store');
     });
+
+// Menampilkan dokumen identitas: HANYA Admin (guard admin).
+//
+// Kenapa di luar grup di atas? Grup itu memakai guard 'web' (pengguna biasa). Route ini butuh
+// guard 'admin', jadi middleware-nya berbeda.
+//
+// auth:admin  = harus sudah login sebagai Admin. Kalau belum, dialihkan ke halaman masuk.
+// role:admin  = middleware milik Rotua yang memastikan yang masuk benar-benar berperan Admin.
+//
+// Catatan: karena URL ini tidak berawalan /admin, tamu dan pengguna biasa dialihkan ke /masuk
+// (aturan redirect di bootstrap/app.php milik Rotua hanya mengarahkan ke login Admin untuk
+// URL berawalan /admin). Ini TIDAK membuka akses: mereka tetap tidak bisa melihat file.
+Route::middleware(['auth:admin', 'role:admin'])
+    ->get('/verifikasi/dokumen/{verification}/{type}', [DocumentViewController::class, 'show'])
+    // whereIn = {type} hanya boleh bernilai 'ktp' atau 'selfie'. Nilai lain (mis. /paspor)
+    // tidak cocok dengan route ini sama sekali, jadi Laravel langsung membalas 404.
+    ->whereIn('type', ['ktp', 'selfie'])
+    // Nama route, dipakai di kode dan test: route('verifikasi.dokumen.show', [...]).
+    ->name('verifikasi.dokumen.show');
