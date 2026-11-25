@@ -7,6 +7,8 @@ use App\Services\Otp\OtpSender;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 use RuntimeException;
+use App\Services\Verification\LogVerificationNotifier;
+use App\Services\Verification\VerificationNotifier;
 
 // Mendaftarkan service modul Verifikasi ke "container" Laravel.
 class VerificationServiceProvider extends ServiceProvider
@@ -32,6 +34,11 @@ class VerificationServiceProvider extends ServiceProvider
             // Driver lain (mis. WhatsApp API sungguhan) belum ada. Nama yang salah ketik
             // harus langsung ketahuan, bukan diam-diam dianggap 'log'.
             throw new InvalidArgumentException("Driver OTP '{$driver}' tidak dikenal.");
+
+            // Pemberitahuan hasil verifikasi. Sementara memakai stub yang menulis ke log.
+            // Saat NotificationService milik Anggota 4 siap: buat kelas baru yang mengimplementasikan
+            // VerificationNotifier dan memanggil NotificationService::send(...), lalu ganti kelas di bawah.
+            $this->app->bind(VerificationNotifier::class, LogVerificationNotifier::class);
         });
     }
 }
