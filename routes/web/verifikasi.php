@@ -5,6 +5,7 @@ use App\Http\Controllers\Verification\VerificationController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Verification\DocumentUploadController;
 use App\Http\Controllers\Verification\DocumentViewController;
+use App\Http\Controllers\Admin\VerificationReviewController;
 
 
 // Pengguna biasa (guard web) yang sudah login, sudah memilih peran, dan akunnya tidak diblokir.
@@ -50,3 +51,17 @@ Route::middleware(['auth:admin', 'role:admin'])
     ->whereIn('type', ['ktp', 'selfie'])
     // Nama route, dipakai di kode dan test: route('verifikasi.dokumen.show', [...]).
     ->name('verifikasi.dokumen.show');
+
+
+// Halaman Admin untuk memeriksa verifikasi (PRD 9: /admin/verifikasi).
+// auth:admin = harus login sebagai Admin. role:admin = perannya harus Admin.
+// Karena URL berawalan /admin, tamu dialihkan ke /admin/masuk (aturan di bootstrap/app.php milik Rotua).
+Route::middleware(['auth:admin', 'role:admin'])
+    ->prefix('admin/verifikasi')
+    ->name('admin.verifikasi.')
+    ->group(function () {
+        Route::get('/', [VerificationReviewController::class, 'index'])->name('index');
+        Route::get('/{verification}', [VerificationReviewController::class, 'show'])->name('show');
+        Route::post('/{verification}/setujui', [VerificationReviewController::class, 'setujui'])->name('setujui');
+        Route::post('/{verification}/tolak', [VerificationReviewController::class, 'tolak'])->name('tolak');
+    });
